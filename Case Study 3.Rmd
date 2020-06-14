@@ -9,12 +9,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-install.packages('nnet', repos = "http://cran.us.r-project.org")
 library(tidyverse)
 library(dplyr)
-library(nnet)
-library(plyr)
-library(knitr)
+library(nnet) # for multinom
+library(plyr) # for count
+library(knitr) # for kable
+library(randomForest) # for random forest
+library(caTools) # for random forest
+library(partykit) # for ctree
 ```
 
 ```{r}
@@ -131,7 +133,7 @@ rownames(mcav)=lab
 colnames(mcav)=c("Average for M1", "Average for M2", "Average for M3", "Average for M4","Average for M5","Average for M6","Average for M7")
 
 mcav
-save(mcav, file="MCAV (comparing models for all of the variables).RData")
+save(mcav, file="MCAV_(comparingfullmod).RData")
 ```
 
 ```{r compmod}
@@ -144,12 +146,12 @@ an4=as.data.frame(anova(mod1, mod5, test = "Chisq")) #check if selected interact
 an5=as.data.frame(anova(mod1, mod6, test = "Chisq")) #check if quadratics are significant
 an6=as.data.frame(anova(mod1, mod7, test = "Chisq")) #check if time is significant
 
-save(an1, file="ANOVA for m1 vs m2 (all predictors).RData")
-save(an2, file="ANOVA for m1 vs m3 (all predictors).RData")
-save(an3, file="ANOVA for m1 vs m4 (all predictors).RData")
-save(an4, file="ANOVA for m1 vs m5 (all predictors).RData")
-save(an5, file="ANOVA for m1 vs m6 (all predictors).RData")
-save(an6, file="ANOVA for m1 vs m7 (all predictors).RData")
+save(an1, file="ANOVA_for_m1_vs_m2_(all).RData")
+save(an2, file="ANOVA_for_m1_vs_m3_(all).RData")
+save(an3, file="ANOVA_for_m1_vs_m4_(all).RData")
+save(an4, file="ANOVA_for_m1_vs_m5_(all).RData")
+save(an5, file="ANOVA_for_m1_vs_m6_(all).RData")
+save(an6, file="ANOVA_for_m1_vs_m7_(all).RData")
 
 ###none are significant 
 ```
@@ -222,6 +224,55 @@ for (i in 1:15){
   print(ggplot(data=sub4, aes(sub4[,i], resid.4))+geom_point()+xlab(colnames(sub4)[i])+ylab("Residuals (Label=4)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i])))
   dev.off()
 }
+```
+
+```{r randforest}
+#random forest
+rftrain=df_train
+rf <- randomForest(as.factor(label) ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp,data=rftrain, ntree=5000)
+
+rftrain$rfpred=predict(rf, df_test)
+#plot actual vs. predicted
+jpeg(file="Actual vs. Predicted (RandFor)")
+ggplot(data=rftrain, aes(rfpred, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Random Forest")
+dev.off()
+
+#conditional inteference tree
+ctmod <- ctree(as.factor(label) ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp,data=rftrain)
+
+rftrain$ctpred=predict(ctmod, df_test)
+#plot actual vs. predicted
+jpeg(file="Actual vs. Predicted (CondTree)")
+ggplot(data=rftrain, aes(ctpred, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Conditional Inference Tree")
+dev.off()
+
+#actual predictions
+rftrain$finpred=predict(mfin, df_test)
+
+#Make misclassification table
+avsens=as.data.frame(cbind(avclassifyrate(df_train, df_test, rf)$Average,avclassifyrate(df_train, df_test, ctmod)$Average,avclassifyrate(df_train, df_test, mfin)$Average))
+avsens
+
+colnames(avsens)=c("Final Model", "Random Forest", "Conditional Inference Tree")
+lab=c("MC Rate for Label=0","MC Rate for Label=1", "MC Rate for Label=2","MC Rate for Label=3","MC Rate for Label=4", "Overall MC Rate")
+rownames(avsens)=lab
+avsens
+save(avsens, file="MisclassRandFor.RData")
+
+#Make percentage classification table
+pclass=merge(count(rftrain$finpred), count(rftrain$rfpred), by="x", all=T)
+pclass=merge(pclass,count(rftrain$ctpred), by="x", all=T)
+pclass=pclass[,-1]
+pclass=(pclass/nrow(rftrain))*100
+#Calculate differences in classification relative to final model
+diffrf=ifelse(rftrain$finpred==rftrain$rfpred,0,1)
+diffct=ifelse(rftrain$finpred==rftrain$ctpred,0,1)
+pclass=rbind(pclass, c(0,sum(diffrf), sum(diffct)))
+rownames(pclass)=c("% Classified as 0","% Classified as 1","% Classified as 2","% Classified as 3","% Classified as 4", "Absolute Diff in Classification")
+colnames(pclass)=c("Final Model","Random Forest", "Conditional Inference Tree")
+pclass[is.na(pclass)]=0
+pclass
+save(pclass, file="Classification_Table_for Final_Decision_Tree.RData")
 ```
 
 ```{r submodsforwrist}
@@ -298,5 +349,5 @@ rownames(mcdat)=lab
 colnames(mcdat)=c("Model 1", "Model 2", "Model 3", "Model4", "Model 5")
 
 mcdat
-save(mcdat, file="MCAV (comparing models for the wrist subset).RData")
+save(mcdat, file="MCAV_(comparing_wristsubs).RData")
 ```
