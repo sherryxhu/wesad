@@ -88,29 +88,29 @@ avclassifyrate=function(train, test, model){
 }
 
 #compute missclassification rate for the full model with wrist and chest
-#Model 1
+#Model 1: single effects
 mod1= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
 wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp, data = df_train)
 
-#Model 2
+#Model 2: 2-way interactions
 mod2= multinom(label ~ (chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
 wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp)^2, data = df_train)
 
-# Model 3
+# Model 3: single effects+ 2 way + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z
 mod3= multinom(label ~ (chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp)^2+wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z, data = df_train)
 
-#Model 4
+#Model 4: single effects + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z + chest_Temp:chest_EDA + chest_ECG:chest_Resp + chest_EMG:chest_EDA + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA
 mod4=multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
 wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z + chest_Temp:chest_EDA + chest_ECG:chest_Resp + chest_EMG:chest_EDA + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA, data = df_train)
 
-#Model 5 
+#Model 5: single effects + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z + chest_Temp:chest_EDA + chest_ECG:chest_Resp + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA
 mod5=multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
 wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z + chest_Temp:chest_EDA + chest_ECG:chest_Resp + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA, data = df_train)
 
-#Model 6
+#Model 6: single effects+quadratic
 mod6= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp+(chest_ACC_X^2)+(chest_ACC_Y^2)+(chest_ACC_Z^2)+(chest_ECG^2)+(chest_EMG^2)+(chest_EDA^2)+(chest_Temp^2)+(chest_Resp^2)+(wrist_ACC_X^2)+(wrist_ACC_Y^2)+(wrist_ACC_Z^2)+(wrist_BVP^2)+(wrist_EDA^2)+(wrist_Temp^2) , data = df_train)
 
-#Model 7
+#Model 7: single effects+Time
 mod7= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp+ Time , data = df_train)
 
 #Get the MC Rates for the models
@@ -229,6 +229,7 @@ for (i in 1:15){
 ```{r randforest}
 #random forest
 rftrain=df_train
+#single effects
 rf <- randomForest(as.factor(label) ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp,data=rftrain, ntree=5000)
 
 rftrain$rfpred=predict(rf, df_test)
@@ -238,6 +239,7 @@ ggplot(data=rftrain, aes(rfpred, label))+geom_point()+xlab("Predicted")+ylab("Ac
 dev.off()
 
 #conditional inteference tree
+#single effects
 ctmod <- ctree(as.factor(label) ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp,data=rftrain)
 
 rftrain$ctpred=predict(ctmod, df_test)
@@ -280,19 +282,19 @@ save(pclass, file="Classification_Table_for Final_Decision_Tree.RData")
 mcr=NULL
 mcdat=NULL
 
-#Model 1
+#Model 1: single effects
 m1 <- multinom(label ~ (wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp), data = df_train)
 
-#Model 2
+#Model 2: 2 way interactions added
 m2 <- multinom(label ~ (wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp)^2, data = df_train)
 
-#Model 3
+#Model 3: 3 way interactions added
 m3 <- multinom(label ~ (wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp)^3, data = df_train)
 
-#Model 4
+#Model 4: single+wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA
 m4 <- multinom(label ~ wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA, data = df_train)
 
-#Model 5
+#Model 5: single+Time
 m5 <- multinom(label ~ (wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp+Time), data = df_train)
 
 #get the AIC for eachh model
