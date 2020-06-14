@@ -14,6 +14,7 @@ library(tidyverse)
 library(dplyr)
 library(nnet)
 library(plyr)
+library(knitr)
 ```
 
 ```{r}
@@ -28,6 +29,9 @@ df$label <- as.factor(df$label)
 
 # set 0 as the baseline
 df <- df %>% mutate(label=relevel(label,ref="0"))
+
+#add in time column
+df$Time<- seq(from = 0, to =nrow(df)/700, by = 1/700)[-4165001]
 ```
 
 ```{r trainingset}
@@ -101,31 +105,50 @@ wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp + w
 mod5=multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
 wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z + chest_Temp:chest_EDA + chest_ECG:chest_Resp + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA, data = df_train)
 
+#Model 6
+mod6= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp+(chest_ACC_X^2)+(chest_ACC_Y^2)+(chest_ACC_Z^2)+(chest_ECG^2)+(chest_EMG^2)+(chest_EDA^2)+(chest_Temp^2)+(chest_Resp^2)+(wrist_ACC_X^2)+(wrist_ACC_Y^2)+(wrist_ACC_Z^2)+(wrist_BVP^2)+(wrist_EDA^2)+(wrist_Temp^2) , data = df_train)
+
+#Model 7
+mod7= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp+ Time , data = df_train)
+
 #Get the MC Rates for the models
 mcdat1=avclassifyrate(df_train, df_test, mod1)
 mcdat2=avclassifyrate(df_train, df_test, mod2)
 mcdat3=avclassifyrate(df_train, df_test, mod3)
 mcdat4=avclassifyrate(df_train, df_test, mod4)
 mcdat5=avclassifyrate(df_train, df_test, mod5)
+mcdat6=avclassifyrate(df_train, df_test, mod6)
+mcdat7=avclassifyrate(df_train, df_test, mod7)
 
 #Get the average MC rate for each model and save as a df
 lab=c("MC Rate for Label=0","MC Rate for Label=1", "MC Rate for Label=2","MC Rate for Label=3","MC Rate for Label=4", "Overall MC Rate", "AIC")
-mcav=as.data.frame(cbind(rowMeans(mcdat1), rowMeans(mcdat2), rowMeans(mcdat3), rowMeans(mcdat4), rowMeans(mcdat5)))
+mcav=as.data.frame(cbind(rowMeans(mcdat1), rowMeans(mcdat2), rowMeans(mcdat3), rowMeans(mcdat4), rowMeans(mcdat5),rowMeans(mcdat6),rowMeans(mcdat7)))
 
 #bind AIC values to df
-mcav=rbind(mcav, c(summary(mod1)$AIC,summary(mod2)$AIC,summary(mod3)$AIC,summary(mod4)$AIC,summary(mod5)$AIC))
+mcav=rbind(mcav, c(summary(mod1)$AIC,summary(mod2)$AIC,summary(mod3)$AIC,summary(mod4)$AIC,summary(mod5)$AIC,summary(mod6)$AIC,summary(mod7)$AIC))
 
 rownames(mcav)=lab
-colnames(mcav)=c("Average for M1", "Average for M2", "Average for M3", "Average for M4","Average for M4")
-
+colnames(mcav)=c("Average for M1", "Average for M2", "Average for M3", "Average for M4","Average for M5","Average for M6","Average for M7")
 mcav
-save(mcav, file="MCAV (comparing models for all of the variables).RData")
+```
+```{r compmod}
+#compare models using drop in deviance
+#no interaction and two way
+as.data.frame(anova(mod1, mod2, test = "Chisq")) #check if 2 way interactions are significant
+as.data.frame(anova(mod1, mod3, test = "Chisq")) #check if selected 3 way interactions are significant
+as.data.frame(anova(mod1, mod4, test = "Chisq")) #check if selected interactions are significant
+as.data.frame(anova(mod1, mod5, test = "Chisq")) #check if selected interactions are significant
+as.data.frame(anova(mod1, mod6, test = "Chisq")) #check if quadratics are significant
+as.data.frame(anova(mod1, mod7, test = "Chisq")) #check if time is significant
+
+###none are significant 
 ```
 
+
 ```{r chosen}
-subtrain=df_train
-subtest=df_test
-  
+subtrain=df_train[,-17]
+subtest=df_test[,-17]
+
 #m1 is the chosen model
 m1 <- multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
                  wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp, data = subtrain)
@@ -134,11 +157,9 @@ m1 <- multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + che
 subtest$predictions <- predict(m1, subtest)
 
 #plot of actual vs. predicted
-jpeg(file="Actual vs. Predicted (Final Model)")
 ggplot(data=subtest, aes(predictions, label))+geom_point()+ggtitle("Actual vs. Predicted for Label")+xlab("Predicted")+ylab("Actual")
-dev.off()
 
-####residuals calculations
+#residuals calculations (NEW)
 #calc predicted probs
 pred_probs <- as.data.frame(predict(m1, type = "probs"))
 colnames(pred_probs)<- c("pp0", "pp1", "pp2", "pp3", "pp4")
@@ -157,37 +178,27 @@ sub4=subtest[, c(3:16, 22, 27)]
 
 #Plots of Residuals vs Predictors for Label=0
 for (i in 1:15){
-  jpeg(file=paste("Residuals vs.",colnames(sub0)[i]))
-  ggplot(data=sub0, aes(sub0[,i], resid.0))+geom_point()+xlab(colnames(sub0)[i])+ylab("Residuals  (Label=0)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i]))
-  dev.off()
+  print(ggplot(data=sub0, aes(sub0[,i], resid.0))+geom_point()+xlab(colnames(sub0)[i])+ylab("Residuals  (Label=0)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i])))
 }
 
 #Plots of Residuals vs Predictors for Label=1
 for (i in 1:15){
-  jpeg(file=paste("Residuals vs.",colnames(sub1)[i]))
-  ggplot(data=sub1, aes(sub1[,i], resid.1))+geom_point()+xlab(colnames(sub1)[i])+ylab("Residuals (Label=1)")+ggtitle(paste("Residuals vs.",colnames(sub1)[i]))
-  dev.off()
+  print(ggplot(data=sub1, aes(sub1[,i], resid.1))+geom_point()+xlab(colnames(sub1)[i])+ylab("Residuals (Label=1)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i])))
 }
 
 #Plots of Residuals vs Predictors for Label=2
 for (i in 1:15){
-  jpeg(file=paste("Residuals vs.",colnames(sub2)[i]))
-  ggplot(data=sub2, aes(sub2[,i], resid.2))+geom_point()+xlab(colnames(sub2)[i])+ylab("Residuals  (Label=2)")+ggtitle(paste("Residuals vs.",colnames(sub2)[i]))
-  dev.off()
+  print(ggplot(data=sub2, aes(sub2[,i], resid.2))+geom_point()+xlab(colnames(sub2)[i])+ylab("Residuals  (Label=2)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i])))
 }
 
 #Plots of Residuals vs Predictors for Label=3
 for (i in 1:15){
-  jpeg(file=paste("Residuals vs.",colnames(sub3)[i]))
-  ggplot(data=sub3, aes(sub3[,i], resid.3))+geom_point()+xlab(colnames(sub3)[i])+ylab("Residuals  (Label=3)")+ggtitle(paste("Residuals vs.",colnames(sub3)[i]))
-  dev.off()
+  print(ggplot(data=sub3, aes(sub3[,i], resid.3))+geom_point()+xlab(colnames(sub3)[i])+ylab("Residuals  (Label=3)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i])))
 }
 
 #Plots of Residuals vs Predictors for Label=4
 for (i in 1:15){
-  jpeg(file=paste("Residuals vs.",colnames(sub4)[i]))
-  ggplot(data=sub4, aes(sub4[,i], resid.4))+geom_point()+xlab(colnames(sub4)[i])+ylab("Residuals (Label=4)")+ggtitle(paste("Residuals vs.",colnames(sub4)[i]))
-  dev.off()
+  print(ggplot(data=sub4, aes(sub4[,i], resid.4))+geom_point()+xlab(colnames(sub4)[i])+ylab("Residuals (Label=4)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i])))
 }
 ```
 
@@ -208,51 +219,51 @@ m3 <- multinom(label ~ (wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wr
 #Model 4
 m4 <- multinom(label ~ wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA, data = df_train)
 
+#Model 5
+m5 <- multinom(label ~ (wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp+Time), data = df_train)
+
 #get the AIC for eachh model
-modaic=c(summary(m1)$AIC,summary(m2)$AIC,summary(m3)$AIC,summary(m4)$AIC)
+modaic=c(summary(m1)$AIC,summary(m2)$AIC,summary(m3)$AIC,summary(m4)$AIC, summary(m5)$AIC)
   
 # column of predicted classes
 df_test$predm1 <- predict(m1, df_test)
 #plot Actual vs. Predicted
-jpeg(file="Actual vs. Predicted (Wrist Submodel 1)")
 ggplot(data=df_test, aes( predm1, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Model 1")
-dev.off()
 
 # column of predicted classes
 df_test$predm2 <- predict(m2, df_test)
 #plot Actual vs. Predicted
-jpeg(file="Actual vs. Predicted (Wrist Submodel 2)")
 ggplot(data=df_test, aes(predm2, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Model 2")
-dev.off()
 
 # column of predicted classes
 df_test$predm3 <- predict(m3, df_test)
 #plot Actual vs. Predicted
-jpeg(file="Actual vs. Predicted (Wrist Submodel 3)")
 ggplot(data=df_test, aes(predm3, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Model 3")
-dev.off()
 
 # column of predicted classes
 df_test$predm4 <- predict(m4, df_test)
 #plot Actual vs. Predicted
-jpeg(file="Actual vs. Predicted (Wrist Submodel 4)")
 ggplot(data=df_test, aes(predm4, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Model 4")
-dev.off
+
+# column of predicted classes
+df_test$predm5 <- predict(m5, df_test)
+#plot Actual vs. Predicted
+ggplot(data=df_test, aes(predm5, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Model 5")
 
 #Get the MC Rates for the models
 m1rate=avclassifyrate(df_train, df_test, m1)
 m2rate=avclassifyrate(df_train, df_test, m2)
 m3rate=avclassifyrate(df_train, df_test, m3)
 m4rate=avclassifyrate(df_train, df_test, m4)
+m5rate=avclassifyrate(df_train, df_test, m5)
+
 
 #Get the average MC rate for each model and save as a df
-mcdat=as.data.frame(cbind(m1rate$Average, m2rate$Average, m3rate$Average,m4rate$Average))
+mcdat=as.data.frame(cbind(m1rate$Average, m2rate$Average, m3rate$Average,m4rate$Average, m5rate$Average))
 mcdat=rbind(mcdat, modaic)
 lab=c("MC Rate for Label=0","MC Rate for Label=1", "MC Rate for Label=2","MC Rate for Label=3","MC Rate for Label=4", "Overall MC Rate", "AIC")
 rownames(mcdat)=lab
-colnames(mcdat)=c("Model 1", "Model 2", "Model 3", "Model4")
+colnames(mcdat)=c("Model 1", "Model 2", "Model 3", "Model4", "Model 5")
 
 mcdat
-save(mcdat, file="MCAV (comparing models for the wrist subset).RData")
 ```
-
