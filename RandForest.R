@@ -7,6 +7,7 @@ install.packages('plyr', repos = "http://cran.us.r-project.org")
 install.packages('randomForest', repos = "http://cran.us.r-project.org")
 install.packages('caTools', repos = "http://cran.us.r-project.org")
 install.packages('partykit', repos = "http://cran.us.r-project.org")
+install.packages('jpeg', repos = "http://cran.us.r-project.org")
 
 # load packages
 library(tidyverse)
@@ -17,6 +18,7 @@ library(knitr) # for kable
 library(randomForest) # for random forest
 library(caTools) # for random forest
 library(partykit) # for ctree
+library(jpeg)
 
 #load data
 load("../data/df.RData")
