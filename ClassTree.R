@@ -7,7 +7,6 @@ install.packages('plyr', repos = "http://cran.us.r-project.org")
 install.packages('randomForest', repos = "http://cran.us.r-project.org")
 install.packages('caTools', repos = "http://cran.us.r-project.org")
 install.packages('partykit', repos = "http://cran.us.r-project.org")
-install.packages('jpeg', repos = "http://cran.us.r-project.org")
 
 # load packages
 library(tidyverse)
@@ -18,7 +17,6 @@ library(knitr) # for kable
 library(randomForest) # for random forest
 library(caTools) # for random forest
 library(partykit) # for ctree
-library(jpeg)
 
 #load data
 load("../data/df.RData")
@@ -79,7 +77,7 @@ ctmod <- ctree(as.factor(label) ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + ches
 rftrain$ctpred=predict(ctmod, df_test)
 
 #plot actual vs. predicted
-jpeg(file="Actual vs. Predicted (CondTree)")
+png(file="ActualvsPredicted(CondTree).png")
 ggplot(data=rftrain, aes(ctpred, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Conditional Inference Tree")
 dev.off()
 
