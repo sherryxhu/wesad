@@ -97,6 +97,7 @@ rftrain$finpred=predict(mod1, df_test)
 
 #Get missclass rate
 avsens=as.data.frame(avclassifyrate(df, rf)$Average)
+print(avsens)
 save(avsens, file="MisclassRandFor.RData")
 
 #Make percentage classification table
@@ -109,5 +110,5 @@ pclass=rbind(pclass, c(0,sum(diffrf)))
 rownames(pclass)=c("% Classified as 0","% Classified as 1","% Classified as 2","% Classified as 3","% Classified as 4", "Absolute Diff in Classification")
 colnames(pclass)=c("Final Model","Random Forest")
 pclass[is.na(pclass)]=0
-pclass
+print(pclass)
 save(pclass, file="Classification_Table_for Forest.RData")
