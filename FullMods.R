@@ -72,25 +72,35 @@ avclassifyrate=function(data, model){
 #Model 1: single effects
 mod1= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
                  wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp, data = df_train)
-save(summary(mod1), file="Mod1.RData")
+sum1=summary(mod1)
+print(sum1)
+save(sum1, file="Mod1.RData")
 
 #Model 2: single effects+Time
 mod2= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp+ Time , data = df_train)
-save(summary(mod2), file="Mod2.RData")
+sum2=summary(mod2)
+print(sum2)
+save(sum2, file="Mod2.RData")
 
 #Model 3: single effects + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z + chest_Temp:chest_EDA + chest_ECG:chest_Resp + chest_EMG:chest_EDA + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA
 mod3=multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
                 wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z + chest_Temp:chest_EDA + chest_ECG:chest_Resp + chest_EMG:chest_EDA + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA, data = df_train)
-save(summary(mod3), file="Mod3.RData")
+sum3=summary(mod3)
+print(sum3)
+save(sum3, file="Mod3.RData")
 
 #Model 4: single effects + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z + chest_Temp:chest_EDA + chest_ECG:chest_Resp + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA
 mod4=multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
                 wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z + chest_Temp:chest_EDA + chest_ECG:chest_Resp + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA, data = df_train)
-save(summary(mod4), file="Mod4.RData")
+sum4=summary(mod4)
+print(sum4)
+save(sum4, file="Mod4.RData")
 
 #Model 5: single effects+quadratic
 mod5= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp+(chest_ACC_X^2)+(chest_ACC_Y^2)+(chest_ACC_Z^2)+(chest_ECG^2)+(chest_EMG^2)+(chest_EDA^2)+(chest_Temp^2)+(chest_Resp^2)+(wrist_ACC_X^2)+(wrist_ACC_Y^2)+(wrist_ACC_Z^2)+(wrist_BVP^2)+(wrist_EDA^2)+(wrist_Temp^2) , data = df_train)
-save(summary(mod5), file="Mod5.RData")
+sum5=summary(mod5)
+print(sum5)
+save(sum5, file="Mod5.RData")
 
 #Get the MC Rates for the models
 mcdat1=avclassifyrate(df, mod1)

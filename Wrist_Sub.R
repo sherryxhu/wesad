@@ -72,15 +72,21 @@ mcdat=NULL
 
 #Model 1: single effects
 m1 <- multinom(label ~ (wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp), data = df_train)
-save(summary(m1), file="WristMod1.RData")
+sum1=summary(m1)
+print(sum1)
+save(sum1, file="WristMod1.RData")
 
 #Model 2: single+wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA
 m2 <- multinom(label ~ wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA, data = df_train)
-save(summary(m2), file="WristMod2.RData")
+sum2=summary(m2)
+print(sum2)
+save(sum2, file="WristMod2.RData")
 
 #Model 3: single+Time
 m3 <- multinom(label ~ (wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp+Time), data = df_train)
-save(summary(m3), file="WristMod3.RData")
+sum3=summary(m3)
+print(sum3)
+save(sum3, file="WristMod1.RData")
 
 #get the AIC for eachh model
 modaic=c(summary(m1)$AIC,summary(m2)$AIC,summary(m3)$AIC)
