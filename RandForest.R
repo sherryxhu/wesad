@@ -7,7 +7,6 @@ install.packages('plyr', repos = "http://cran.us.r-project.org")
 install.packages('randomForest', repos = "http://cran.us.r-project.org")
 install.packages('caTools', repos = "http://cran.us.r-project.org")
 install.packages('partykit', repos = "http://cran.us.r-project.org")
-install.packages('jpeg', repos = "http://cran.us.r-project.org")
 
 # load packages
 library(tidyverse)
@@ -18,7 +17,6 @@ library(knitr) # for kable
 library(randomForest) # for random forest
 library(caTools) # for random forest
 library(partykit) # for ctree
-library(jpeg)
 
 #load data
 load("../data/df.RData")
@@ -78,18 +76,8 @@ rf <- randomForest(as.factor(label) ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + 
 
 rftrain$rfpred=predict(rf, df_test)
 #plot actual vs. predicted
-jpeg(file="Actual vs. Predicted (RandFor)")
+png(file="ActualvsPredicted(RandFor).png")
 ggplot(data=rftrain, aes(rfpred, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Random Forest")
-dev.off()
-
-#conditional inteference tree
-#single effects
-ctmod <- ctree(as.factor(label) ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp,data=rftrain)
-
-rftrain$ctpred=predict(ctmod, df_test)
-#plot actual vs. predicted
-jpeg(file="Actual vs. Predicted (CondTree)")
-ggplot(data=rftrain, aes(ctpred, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Conditional Inference Tree")
 dev.off()
 
 #actual predictions

@@ -7,7 +7,6 @@ install.packages('plyr', repos = "http://cran.us.r-project.org")
 install.packages('randomForest', repos = "http://cran.us.r-project.org")
 install.packages('caTools', repos = "http://cran.us.r-project.org")
 install.packages('partykit', repos = "http://cran.us.r-project.org")
-install.packages('jpeg', repos = "http://cran.us.r-project.org")
 
 # load packages
 library(tidyverse)
@@ -18,7 +17,6 @@ library(knitr) # for kable
 library(randomForest) # for random forest
 library(caTools) # for random forest
 library(partykit) # for ctree
-library(jpeg)
 
 #load data
 load("../data/df.RData")
@@ -144,7 +142,7 @@ subtest=df_test[,-17]
 subtest$predictions <- predict(mod1, subtest)
 
 #plot of actual vs. predicted
-jpeg(file="Actual vs. Predicted (Final Model)")
+png(file="ActualvsPredicted(FinalModel).png")
 ggplot(data=subtest, aes(predictions, label))+geom_point()+ggtitle("Actual vs. Predicted for Label")+xlab("Predicted")+ylab("Actual")
 dev.off()
 
@@ -167,35 +165,35 @@ sub4=subtest[, c(3:16, 22, 27)]
 
 #Plots of Residuals vs Predictors for Label=0
 for (i in 1:15){
-  jpeg(file=paste("Residuals vs.",colnames(sub0)[i]))
+  png(file=paste("Residuals vs.",colnames(sub0)[i],".png"))
   print(ggplot(data=sub0, aes(sub0[,i], resid.0))+geom_point()+xlab(colnames(sub0)[i])+ylab("Residuals  (Label=0)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i])))
   dev.off()
 }
 
 #Plots of Residuals vs Predictors for Label=1
 for (i in 1:15){
-  jpeg(file=paste("Residuals vs.",colnames(sub1)[i]))
+  png(file=paste("Residuals vs.",colnames(sub1)[i],".png"))
   print(ggplot(data=sub1, aes(sub1[,i], resid.1))+geom_point()+xlab(colnames(sub1)[i])+ylab("Residuals (Label=1)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i])))
   dev.off()
 }
 
 #Plots of Residuals vs Predictors for Label=2
 for (i in 1:15){
-  jpeg(file=paste("Residuals vs.",colnames(sub2)[i]))
+  png(file=paste("Residuals vs.",colnames(sub2)[i],".png"))
   print(ggplot(data=sub2, aes(sub2[,i], resid.2))+geom_point()+xlab(colnames(sub2)[i])+ylab("Residuals  (Label=2)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i])))
   dev.off()
 }
 
 #Plots of Residuals vs Predictors for Label=3
 for (i in 1:15){
-  jpeg(file=paste("Residuals vs.",colnames(sub3)[i]))
+  png(file=paste("Residuals vs.",colnames(sub3)[i],".png"))
   print(ggplot(data=sub3, aes(sub3[,i], resid.3))+geom_point()+xlab(colnames(sub3)[i])+ylab("Residuals  (Label=3)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i])))
   dev.off()
 }
 
 #Plots of Residuals vs Predictors for Label=4
 for (i in 1:15){
-  jpeg(file=paste("Residuals vs.",colnames(sub4)[i]))
+  png(file=paste("Residuals vs.",colnames(sub4)[i],".png"))
   print(ggplot(data=sub4, aes(sub4[,i], resid.4))+geom_point()+xlab(colnames(sub4)[i])+ylab("Residuals (Label=4)")+ggtitle(paste("Residuals vs.",colnames(sub0)[i])))
   dev.off()
 }

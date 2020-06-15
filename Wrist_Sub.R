@@ -7,7 +7,6 @@ install.packages('plyr', repos = "http://cran.us.r-project.org")
 install.packages('randomForest', repos = "http://cran.us.r-project.org")
 install.packages('caTools', repos = "http://cran.us.r-project.org")
 install.packages('partykit', repos = "http://cran.us.r-project.org")
-install.packages('jpeg', repos = "http://cran.us.r-project.org")
 
 # load packages
 library(tidyverse)
@@ -18,7 +17,6 @@ library(knitr) # for kable
 library(randomForest) # for random forest
 library(caTools) # for random forest
 library(partykit) # for ctree
-library(jpeg)
 
 #load data
 load("../data/df.RData")
@@ -94,21 +92,21 @@ modaic=c(summary(m1)$AIC,summary(m2)$AIC,summary(m3)$AIC)
 # column of predicted classes
 df_test$predm1 <- predict(m1, df_test)
 #plot Actual vs. Predicted
-jpeg(file="Actual vs. Predicted (Wrist Submodel 1)")
+png(file="ActualvsPredicted(WristSubmodel1).png")
 ggplot(data=df_test, aes( predm1, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Model 1")
 dev.off()
 
 # column of predicted classes
 df_test$predm2 <- predict(m2, df_test)
 #plot Actual vs. Predicted
-jpeg(file="Actual vs. Predicted (Wrist Submodel 2)")
+png(file="ActualvsPredicted(WristSubmodel2).png")
 ggplot(data=df_test, aes(predm2, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Model 2")
 dev.off()
 
 # column of predicted classes
 df_test$predm3 <- predict(m3, df_test)
 #plot Actual vs. Predicted
-jpeg(file="Actual vs. Predicted (Wrist Submodel 3)")
+png(file="ActualvsPredicted(WristSubmodel3).png")
 ggplot(data=df_test, aes(predm3, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Model 3")
 dev.off()
 
