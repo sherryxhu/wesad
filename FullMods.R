@@ -7,6 +7,7 @@ install.packages('plyr', repos = "http://cran.us.r-project.org")
 install.packages('randomForest', repos = "http://cran.us.r-project.org")
 install.packages('caTools', repos = "http://cran.us.r-project.org")
 install.packages('partykit', repos = "http://cran.us.r-project.org")
+install.packages('caret', repos= "http://cran.us.r-project.org")
 
 # load packages
 library(tidyverse)
@@ -17,11 +18,12 @@ library(knitr) # for kable
 library(randomForest) # for random forest
 library(caTools) # for random forest
 library(partykit) # for ctree
+library(caret)
 
 #load data
-load("../data/df.RData")
-load("../data/df_train.RData")
-load("../data/df_test.RData")
+load("data/df.RData")
+load("data/df_train.RData")
+load("data/df_test.RData")
 
 mcr=NULL
 
@@ -74,12 +76,6 @@ sum1=summary(mod1)
 print(sum1)
 save(sum1, file="Mod1.RData")
 
-#Model 2: single effects+Time
-mod2= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp+ Time , data = df_train)
-sum2=summary(mod2)
-print(sum2)
-save(sum2, file="Mod2.RData")
-
 #Model 3: single effects + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z + chest_Temp:chest_EDA + chest_ECG:chest_Resp + chest_EMG:chest_EDA + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA
 mod3=multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
                 wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + chest_ACC_X:chest_ACC_Y:chest_ACC_Z + chest_Temp:chest_EDA + chest_ECG:chest_Resp + chest_EMG:chest_EDA + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA, data = df_train)
@@ -102,32 +98,29 @@ save(sum5, file="Mod5.RData")
 
 #Get the MC Rates for the models
 mcdat1=avclassifyrate(df, mod1)
-mcdat2=avclassifyrate(df, mod2)
 mcdat3=avclassifyrate(df, mod3)
 mcdat4=avclassifyrate(df, mod4)
 mcdat5=avclassifyrate(df, mod5)
 
 #Get the average MC rate for each model and save as a df
 lab=c("MC Rate for Label=0","MC Rate for Label=1", "MC Rate for Label=2","MC Rate for Label=3","MC Rate for Label=4", "Overall MC Rate", "AIC")
-mcav=as.data.frame(cbind(rowMeans(mcdat1), rowMeans(mcdat2), rowMeans(mcdat3), rowMeans(mcdat4), rowMeans(mcdat5)))
+mcav=as.data.frame(cbind(rowMeans(mcdat1), rowMeans(mcdat3), rowMeans(mcdat4), rowMeans(mcdat5)))
 
 #bind AIC values to df
-mcav=rbind(mcav, c(summary(mod1)$AIC,summary(mod2)$AIC,summary(mod3)$AIC,summary(mod4)$AIC,summary(mod5)$AIC))
+mcav=rbind(mcav, c(summary(mod1)$AIC,summary(mod3)$AIC,summary(mod4)$AIC,summary(mod5)$AIC))
 
 rownames(mcav)=lab
-colnames(mcav)=c("Average for M1", "Average for M2", "Average for M3", "Average for M4","Average for M5")
+colnames(mcav)=c("Average for M1", "Average for M3", "Average for M4","Average for M5")
 
 mcav
 save(mcav, file="MCAV_(comparingfullmod).RData")
 
 #compare models using drop in deviance
 #no interaction and two way
-an1=as.data.frame(anova(mod1, mod2, test = "Chisq")) #check if 2 way interactions are significant
 an2=as.data.frame(anova(mod1, mod3, test = "Chisq")) #check if selected 3 way interactions are significant
 an3=as.data.frame(anova(mod1, mod4, test = "Chisq")) #check if selected interactions are significant
 an4=as.data.frame(anova(mod1, mod5, test = "Chisq")) #check if selected interactions are significant
 
-save(an1, file="ANOVA_for_m1_vs_m2_(all).RData")
 save(an2, file="ANOVA_for_m1_vs_m3_(all).RData")
 save(an3, file="ANOVA_for_m1_vs_m4_(all).RData")
 save(an4, file="ANOVA_for_m1_vs_m5_(all).RData")
@@ -139,19 +132,17 @@ subtest=df_test[,-17]
 
 # mod1 is the final model
 # column of predicted classes
-subtest$predictions <- predict(mod1, subtest)
+subtest$predictions <- predict(mod3, subtest)
 
-#plot of actual vs. predicted
-png(file="ActualvsPredicted(FinalModel).png")
-ggplot(data=subtest, aes(predictions, label))+geom_point()+ggtitle("Actual vs. Predicted for Label")+xlab("Predicted")+ylab("Actual")
-dev.off()
+# confusion matrix
+confusionMatrix(subtest$predictions, subtest$label)
 
 #residuals calculations (NEW)
 #calc predicted probs
-pred_probs <- as.data.frame(predict(m1, type = "probs"))
+pred_probs <- as.data.frame(predict(mod1, subtest, type = "probs"))
 colnames(pred_probs)<- c("pp0", "pp1", "pp2", "pp3", "pp4")
 #calc residuals
-residuals <- as.data.frame(residuals(m1)) %>%  #calculate residuals
+residuals <- as.data.frame(residuals(mod1)) %>%  #calculate residuals
   setNames(paste('resid.', names(.), sep = "")) #update column names
 
 subtest=cbind(subtest, pred_probs, residuals)

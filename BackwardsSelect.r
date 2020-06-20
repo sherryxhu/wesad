@@ -19,9 +19,11 @@ library(caTools) # for random forest
 library(partykit) # for ctree
 
 #load data
-load("../data/df.RData")
-load("../data/df_train.RData")
-load("../data/df_test.RData")
+load("data/df.RData")
+load("data/df_train.RData")
+load("data/df_test.RData")
+
+mcr=NULL
 
 mcr=NULL
 
@@ -64,65 +66,67 @@ avclassifyrate=function(data, model){
   return(mcr)
 }
 
-# Check submodels for just wrist predictors
-mcr=NULL
-mcdat=NULL
-
+#compute missclassification rate for the full model with wrist and chest
 #Model 1: single effects
-m1 <- multinom(label ~ (wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp), data = df_train)
-sum1=summary(m1)
+mod1= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp +
+                 wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp, data = df_train)
+sum1=summary(mod1)
 print(sum1)
-save(sum1, file="WristMod1.RData")
+save(sum1, file="Full.RData")
 
-#Model 2: single+wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA
-m2 <- multinom(label ~ wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp + wrist_ACC_X:wrist_ACC_Y:wrist_ACC_Z + wrist_EDA:wrist_Temp + wrist_BVP:wrist_Temp+ wrist_BVP:wrist_EDA, data = df_train)
-sum2=summary(m2)
+#Model 2: wo Chest Resp
+mod2= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp +
+                 wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp, data = df_train)
+sum2=summary(mod2)
 print(sum2)
-save(sum2, file="WristMod2.RData")
+save(sum2, file="woChestResp.RData")
 
-#Model 3: single+quadratic
-m3 <- multinom(label ~ (wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp+(wrist_ACC_X)^2 +(wrist_ACC_Y)^2 + (wrist_ACC_Z)^2 + (wrist_BVP)^2 + (wrist_EDA)^2 + (wrist_Temp)^2), data=df_train)
-sum3=summary(m3)
+#Model 3: wo Wrist BVP
+mod3=multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp +
+                wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_EDA + wrist_Temp, data = df_train)
+sum3=summary(mod3)
 print(sum3)
-save(sum3, file="WristMod3.RData")
+save(sum3, file="woWristBVP.RData")
 
-#get the AIC for eachh model
-modaic=c(summary(m1)$AIC,summary(m2)$AIC,summary(m3)$AIC)
-
-# column of predicted classes
-df_test$predm1 <- predict(m1, df_test)
-#plot Actual vs. Predicted
-png(file="ActualvsPredicted(WristSubmodel1).png")
-ggplot(data=df_test, aes( predm1, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Model 1")
-dev.off()
-
-# column of predicted classes
-df_test$predm2 <- predict(m2, df_test)
-#plot Actual vs. Predicted
-png(file="ActualvsPredicted(WristSubmodel2).png")
-ggplot(data=df_test, aes(predm2, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Model 2")
-dev.off()
-
-# column of predicted classes
-df_test$predm3 <- predict(m3, df_test)
-#plot Actual vs. Predicted
-png(file="ActualvsPredicted(WristSubmodel3).png")
-ggplot(data=df_test, aes(predm3, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Model 3")
-dev.off()
-
+#Model 6: wo chest_Resp and wrist BVP
+mod6=multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp  +
+                wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z  + wrist_EDA + wrist_Temp, data = df_train)
+sum6=summary(mod6)
+print(sum6)
+save(sum6, file="woChestRespwristBVP.RData")
 
 #Get the MC Rates for the models
-m1rate=avclassifyrate(df, m1)
-m2rate=avclassifyrate(df, m2)
-m3rate=avclassifyrate(df, m3)
-
+mcdat1=avclassifyrate(df, mod1)
+mcdat2=avclassifyrate(df, mod2)
+mcdat3=avclassifyrate(df, mod3)
+mcdat6=avclassifyrate(df, mod6)
 
 #Get the average MC rate for each model and save as a df
-mcdat=as.data.frame(cbind(m1rate$Average, m2rate$Average, m3rate$Average,m4rate$Average, m5rate$Average))
-mcdat=rbind(mcdat, modaic)
 lab=c("MC Rate for Label=0","MC Rate for Label=1", "MC Rate for Label=2","MC Rate for Label=3","MC Rate for Label=4", "Overall MC Rate", "AIC")
-rownames(mcdat)=lab
-colnames(mcdat)=c("Model 1", "Model 2", "Model 3", "Model4", "Model 5")
+mcav=as.data.frame(cbind(rowMeans(mcdat1), rowMeans(mcdat2), rowMeans(mcdat3), rowMeans(mcdat6)))
 
-mcdat
-save(mcdat, file="MCAV_(comparing_wristsubs).RData")
+#bind AIC values to df
+mcav=rbind(mcav, c(summary(mod1)$AIC,summary(mod2)$AIC,summary(mod3)$AIC,summary(mod6)$AIC))
+
+rownames(mcav)=lab
+colnames(mcav)=c("Average for M1", "Average for M2", "Average for M3", "Average for M6")
+
+mcav
+print(mcav)
+save(mcav, file="MCAV_(backselect).RData")
+
+#compare models using drop in deviance
+#no interaction and two way
+an1=as.data.frame(anova(mod2, mod1, test = "Chisq")) #check if 2 way interactions are significant
+print(an1)
+an1
+an2=as.data.frame(anova(mod3, mod1, test = "Chisq")) #check if selected 3 way interactions are significant
+print(an2)
+an2
+an5=as.data.frame(anova(mod6, mod1, test = "Chisq")) #check if selected interactions are significant
+print(an5)
+an5
+
+save(an1, file="ANOVA_for_m1_vs_m2_(back).RData")
+save(an2, file="ANOVA_for_m1_vs_m3_(back).RData")
+save(an5, file="ANOVA_for_m1_vs_m6_(back).RData")

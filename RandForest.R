@@ -7,6 +7,10 @@ install.packages('plyr', repos = "http://cran.us.r-project.org")
 install.packages('randomForest', repos = "http://cran.us.r-project.org")
 install.packages('caTools', repos = "http://cran.us.r-project.org")
 install.packages('partykit', repos = "http://cran.us.r-project.org")
+install.packages('caret', repos = "http://cran.us.r-project.org")
+
+
+
 
 # load packages
 library(tidyverse)
@@ -17,11 +21,12 @@ library(knitr) # for kable
 library(randomForest) # for random forest
 library(caTools) # for random forest
 library(partykit) # for ctree
+library(caret)
 
 #load data
-load("../data/df.RData")
-load("../data/df_train.RData")
-load("../data/df_test.RData")
+load("data/df.RData")
+load("data/df_train.RData")
+load("data/df_test.RData")
 
 mcr=NULL
 
@@ -65,20 +70,13 @@ avclassifyrate=function(data, model){
 }
 
 #final model
-mod1= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
-                 wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp, data = df_train)
-
-
 #random forest
 rftrain=df_train
 #single effects
-rf <- randomForest(as.factor(label) ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp,data=rftrain, ntree=5000)
+rf <- randomForest(as.factor(label) ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp,data=rftrain, ntree=5000, nodesize=15)
 
 rftrain$rfpred=predict(rf, df_test)
 #plot actual vs. predicted
-png(file="ActualvsPredicted(RandFor).png")
-ggplot(data=rftrain, aes(rfpred, label))+geom_point()+xlab("Predicted")+ylab("Actual")+ggtitle("Actual vs. Predicted for Random Forest")
-dev.off()
 
 #actual predictions
 rftrain$finpred=predict(mod1, df_test)

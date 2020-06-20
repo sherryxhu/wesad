@@ -19,9 +19,9 @@ library(caTools) # for random forest
 library(partykit) # for ctree
 
 #load data
-load("../data/df.RData")
+#load("../data/df.RData")
 load("../data/df_train.RData")
-load("../data/df_test.RData")
+#load("../data/df_test.RData")
 
 modin= multinom(label ~ chest_ACC_X + chest_ACC_Y + chest_ACC_Z + chest_ECG + chest_EMG + chest_EDA + chest_Temp + chest_Resp + 
                  wrist_ACC_X + wrist_ACC_Y + wrist_ACC_Z + wrist_BVP + wrist_EDA + wrist_Temp, data = df_train)
